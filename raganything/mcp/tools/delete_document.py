@@ -9,6 +9,7 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
+from raganything.mcp.cache import clear_query_response_cache
 from raganything.mcp.cleanup import cleanup_document_residue
 from raganything.mcp import rag_instance
 
@@ -49,6 +50,9 @@ def register(mcp: FastMCP) -> None:
         if existing is None:
             cleanup = await cleanup_document_residue(rag, doc_id)
             if _cleanup_removed_anything(cleanup):
+                cleanup["query_cache_deleted"] = await clear_query_response_cache(
+                    rag.lightrag
+                )
                 return DeleteDocumentOutput(
                     doc_id=doc_id,
                     deleted=True,
@@ -70,6 +74,7 @@ def register(mcp: FastMCP) -> None:
         native_result = await rag.lightrag.adelete_by_doc_id(doc_id)
         post_cleanup = await cleanup_document_residue(rag, doc_id)
         cleanup = _merge_cleanup_summaries(pre_cleanup, post_cleanup)
+        cleanup["query_cache_deleted"] = await clear_query_response_cache(rag.lightrag)
         native_status = getattr(native_result, "status", "unknown")
         native_message = getattr(native_result, "message", "")
         if native_status not in {"success", "not_found"}:

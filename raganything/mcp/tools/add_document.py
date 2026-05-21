@@ -19,6 +19,7 @@ from typing import Any, Optional
 from mcp.server.fastmcp import FastMCP
 
 from raganything.mcp import jobs, rag_instance
+from raganything.mcp.cache import clear_query_response_cache
 from raganything.mcp.schemas import AddDocumentSubmitOutput
 from raganything.utils import separate_content
 
@@ -161,6 +162,8 @@ async def _perform_add(
     except Exception:
         pass
 
+    query_cache_deleted = await clear_query_response_cache(rag.lightrag)
+
     return {
         "doc_id": final_doc_id,
         "file_name": file_name,
@@ -170,6 +173,7 @@ async def _perform_add(
         "chunk_count": chunk_count,
         "document_status": document_status,
         "document_error": document_error,
+        "query_cache_deleted": query_cache_deleted,
         "elapsed_seconds": round(time.time() - start, 2),
         "parser_used": rag.config.parser,
     }
