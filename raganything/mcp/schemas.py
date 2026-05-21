@@ -40,6 +40,33 @@ class AddDocumentOutput(BaseModel):
     parser_used: str = Field(..., description="實際使用的解析器名稱")
 
 
+class AddDocumentSubmitOutput(BaseModel):
+    """`rag_add_document` 出參（非同步提交）。"""
+
+    job_id: str = Field(..., description="背景工作 ID，用 rag_get_job_status 輪詢")
+    status: str = Field(..., description="submitted（已進背景佇列）")
+    file_name: str = Field(..., description="檔名")
+    message: str = Field(
+        ...,
+        description="提示：用 rag_get_job_status(job_id) 查進度，大文件可能需 1-5 分鐘",
+    )
+
+
+class JobStatusOutput(BaseModel):
+    """`rag_get_job_status` 出參。"""
+
+    job_id: str
+    status: str = Field(
+        ..., description="pending / processing / completed / failed / not_found"
+    )
+    file_name: str = ""
+    elapsed_seconds: float = 0.0
+    result: Optional[dict] = Field(
+        None, description="completed 時為 AddDocumentOutput 內容"
+    )
+    error: Optional[str] = Field(None, description="failed 時的錯誤訊息")
+
+
 class QueryOutput(BaseModel):
     """`rag_query` 與 `rag_query_multimodal` 出參。"""
 

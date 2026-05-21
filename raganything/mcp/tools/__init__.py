@@ -14,16 +14,19 @@ def register_all(mcp: FastMCP) -> None:
 
     Phase 2 註冊：add_document / query / list_documents / status。
     Phase 3 擴充：delete_document / query_multimodal / extract_content。
+    非同步化（R1）：add_document 改背景提交 + job_status 輪詢。
     """
     from raganything.mcp.tools import add_document as _add
     from raganything.mcp.tools import delete_document as _del
     from raganything.mcp.tools import extract_content as _extract
+    from raganything.mcp.tools import job_status as _job
     from raganything.mcp.tools import list_documents as _list
     from raganything.mcp.tools import query as _query
     from raganything.mcp.tools import query_multimodal as _query_mm
     from raganything.mcp.tools import status as _status
 
     _add.register(mcp)
+    _job.register(mcp)
     _del.register(mcp)
     _query.register(mcp)
     _query_mm.register(mcp)
