@@ -1039,6 +1039,52 @@ python examples/text_format_test.py --check-reportlab --file dummy
 
 ---
 
+## 🔌 MCP Server (Claude Desktop / Cursor / Claude Code)
+
+Expose RAG-Anything as a [Model Context Protocol](https://modelcontextprotocol.io/) server so any MCP-compatible client (Claude Desktop, Cursor, Claude Code) can call it as tools. Seven tools are provided covering document add / delete / query / multimodal query / list / structured extraction / status.
+
+### Install
+
+```bash
+pip install -e ".[mcp,all]"
+```
+
+This pulls in `mcp[cli]`, `ollama`, `python-dotenv`, `numpy`, `pydantic` and registers a `raganything-mcp` console script.
+
+### Configure Claude Desktop
+
+Copy [`examples/mcp/claude_desktop_config.json`](examples/mcp/claude_desktop_config.json) into your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS), then edit the `command` path and `env` block. Required variables (server fails fast on first tool call if any are missing — no silent defaults):
+
+- `WORKING_DIR` — absolute path for LightRAG storage
+- `LLM_MODEL`, `LLM_BINDING_HOST` — Ollama-compatible chat endpoint (`/v1` suffix)
+- `EMBEDDING_MODEL`, `EMBEDDING_DIM`, `EMBEDDING_BINDING_HOST` — Ollama native embedding endpoint (no `/v1`)
+
+Optional `VISION_MODEL` / `VISION_BINDING_HOST` enable VLM-enhanced query (image content in context auto-encoded to base64 for the vision model).
+
+### Test without Claude Desktop
+
+```bash
+python examples/mcp/test_client.py     # Phase 1: list tools + status
+python examples/mcp/phase2_e2e.py      # Phase 2: add → list → query (1–3 min)
+python examples/mcp/phase3_e2e.py      # Phase 3: extract + multimodal + delete
+```
+
+### Tools
+
+| Tool | Action |
+|---|---|
+| `rag_add_document` | Parse + insert a file (PDF/Office/MD/TXT/image) into the knowledge graph |
+| `rag_delete_document` | Remove a document and its graph records |
+| `rag_query` | Text query against the knowledge graph |
+| `rag_query_multimodal` | Query with an image / table / equation as additional context |
+| `rag_list_documents` | List indexed documents (with status filter) |
+| `rag_extract_content` | Parse a file into structured items **without** indexing |
+| `rag_get_status` | Server config + storage stats |
+
+See [`docs/mcp_design.md`](docs/mcp_design.md) for the full design rationale, environment variables, and the workaround for the RAGAnything 1.3.0 + LightRAG 1.4.16 `_upsert_doc_status` regression that affects `process_document_complete`.
+
+---
+
 ## 🔧 Configuration
 
 *System Optimization Parameters*

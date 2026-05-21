@@ -1,0 +1,34 @@
+{
+  "_comment": "Claude Desktop 接 rag-anything MCP server 的參考配置。複製到 ~/Library/Application Support/Claude/claude_desktop_config.json，把所有 /path/to 與 your-*-host 換成你的實際值。重點：(1) command 指向 venv 內 raganything-mcp 絕對路徑；(2) env 必填變數缺一個啟動自檢就 fail-fast；(3) 路徑用絕對路徑。PARSER 可選 mineru-remote(遠端GPU,推薦) / docling(本機) / mineru(本機VLM,慢)。",
+  "mcpServers": {
+    "rag-anything": {
+      "command": "/path/to/RAG-Anything/.venv/bin/raganything-mcp",
+      "env": {
+        "WORKING_DIR": "/path/to/rag_storage",
+        "OUTPUT_DIR": "/path/to/parser_output",
+        "PARSER": "mineru-remote",
+        "PARSE_METHOD": "auto",
+        "MINERU_REMOTE_URL": "http://your-dgx-host:8889",
+        "MINERU_REMOTE_BACKEND": "pipeline",
+        "MINERU_REMOTE_TIMEOUT": "600",
+        "ENABLE_IMAGE_PROCESSING": "false",
+        "ENABLE_TABLE_PROCESSING": "true",
+        "ENABLE_EQUATION_PROCESSING": "true",
+        "LLM_BINDING": "openai",
+        "LLM_MODEL": "gemma4:latest",
+        "LLM_BINDING_HOST": "http://your-ollama-host:9000/v1",
+        "LLM_BINDING_API_KEY": "ollama",
+        "EMBEDDING_BINDING": "ollama",
+        "EMBEDDING_MODEL": "bge-m3:latest",
+        "EMBEDDING_DIM": "1024",
+        "EMBEDDING_BINDING_HOST": "http://your-ollama-host:9000",
+        "EMBEDDING_BINDING_API_KEY": "ollama",
+        "MAX_ASYNC": "2",
+        "TIMEOUT": "300",
+        "SUMMARY_LANGUAGE": "Chinese",
+        "LIBREOFFICE_BIN_DIR": "/Applications/LibreOffice.app/Contents/MacOS",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
