@@ -484,6 +484,7 @@ class Parser:
                             level = len(line) - len(line.lstrip("#"))
                             header_text = line.lstrip("#").strip()
                             if header_text:
+                                header_text = cls._process_inline_markdown(header_text)
                                 header_style = ParagraphStyle(
                                     name=f"Heading{level}",
                                     parent=heading_style,
@@ -494,6 +495,7 @@ class Parser:
                                 story.append(Paragraph(header_text, header_style))
                         else:
                             # Regular text
+                            line = cls._process_inline_markdown(line)
                             story.append(Paragraph(line, normal_style))
                             story.append(Spacer(1, 6))
                 else:

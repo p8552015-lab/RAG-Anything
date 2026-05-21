@@ -9,6 +9,7 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
+from raganything.mcp.cleanup import cleanup_document_residue
 from raganything.mcp import rag_instance
 
 
@@ -16,6 +17,19 @@ class DeleteDocumentOutput(BaseModel):
     doc_id: str
     deleted: bool
     message: str = ""
+    cleanup: dict[str, int] = Field(default_factory=dict)
+
+
+def _cleanup_removed_anything(summary: dict[str, int]) -> bool:
+    return any(value > 0 for key, value in summary.items() if key != "chunk_ids_found")
+
+
+def _merge_cleanup_summaries(*summaries: dict[str, int]) -> dict[str, int]:
+    merged: dict[str, int] = {}
+    for summary in summaries:
+        for key, value in summary.items():
+            merged[key] = merged.get(key, 0) + value
+    return merged
 
 
 def register(mcp: FastMCP) -> None:
@@ -33,15 +47,45 @@ def register(mcp: FastMCP) -> None:
 
         existing = await rag.lightrag.doc_status.get_by_id(doc_id)
         if existing is None:
+            cleanup = await cleanup_document_residue(rag, doc_id)
+            if _cleanup_removed_anything(cleanup):
+                return DeleteDocumentOutput(
+                    doc_id=doc_id,
+                    deleted=True,
+                    message="doc_status 找不到，但已清除殘留的 chunks / graph / vector 記錄",
+                    cleanup=cleanup,
+                )
             return DeleteDocumentOutput(
                 doc_id=doc_id,
                 deleted=False,
                 message="找不到此 doc_id 於 doc_status",
+                cleanup=cleanup,
             )
 
-        await rag.lightrag.adelete_by_doc_id(doc_id)
+        pre_cleanup = await cleanup_document_residue(
+            rag,
+            doc_id,
+            delete_doc_records=False,
+        )
+        native_result = await rag.lightrag.adelete_by_doc_id(doc_id)
+        post_cleanup = await cleanup_document_residue(rag, doc_id)
+        cleanup = _merge_cleanup_summaries(pre_cleanup, post_cleanup)
+        native_status = getattr(native_result, "status", "unknown")
+        native_message = getattr(native_result, "message", "")
+        if native_status not in {"success", "not_found"}:
+            return DeleteDocumentOutput(
+                doc_id=doc_id,
+                deleted=_cleanup_removed_anything(cleanup),
+                message=(
+                    f"LightRAG 刪除結果為 {native_status}: {native_message}; "
+                    "已執行 MCP residual cleanup"
+                ),
+                cleanup=cleanup,
+            )
+
         return DeleteDocumentOutput(
             doc_id=doc_id,
             deleted=True,
-            message="LightRAG 已移除文件及其圖譜記錄",
+            message="LightRAG 已移除文件；MCP 已補做 residual cleanup",
+            cleanup=cleanup,
         )
